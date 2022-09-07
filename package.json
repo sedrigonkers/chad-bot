@@ -1,4 +1,4 @@
- {
+{
   "name": "telegram",
   "version": "1.0.0",
   "description": "",
@@ -11,7 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "firebase": "^9.9.4",
     "telegraf": "^4.9.1"
   }
 }
