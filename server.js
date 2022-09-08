@@ -1,31 +1,21 @@
-const { Telegraf } = require('telegraf')
-const fetch = require('node-fetch')
-const axios = require('axios')
+const TelegramBot = require('node-telegram-bot-api')
 
-const BOT_TOKEN = '5646501975:AAFZ37NppJplu4Ckgsk8iBs22gNNP-jVNDY'
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`
+const token = '5646501975:AAFZ37NppJplu4Ckgsk8iBs22gNNP-jVNDY'
 
-fetch(`${TELEGRAM_API}/sendMessage?chat_id=444198069&text=<b>hello</b>&parse_mode=HTML`)
+const bot = new TelegramBot(token, { polling: true });
 
-const bot = new Telegraf(BOT_TOKEN)
+bot.onText(/\/motivation/, (msg, match) => {
 
-bot.help((ctx) => ctx.reply('Send me a sticker'))
+  const chatId = msg.chat.id;
+  const resp = match[1];
 
-bot.on()
+  bot.sendMessage(chatId, 'motivation phrase here');
+  console.log(match)
+});
 
-bot.start((ctx) => ctx.reply(
-        `
-    Приветствую тебя, дружище! Добро пожаловать в клуб.🤜🤛
+bot.on('edited_message', (msg) => {
 
-    Здесь мы жестко гриндим, чтобы cтать лучшей версией себя.У всех нас свои причины для этого, и разные предыстории, но нас объеденяет одно - * желаение стать лучше * 🔥. * Ты - большой молодец *, если нашел этого бота.Мы будем помогать тебе не сбиться на этом длинном пути 💪
+  const chatId = msg.chat.id;
 
-  Ну, готов ? `
-    ))
-
-bot.hears('а как жить?', ctx => ctx.reply('жить нужно так, чтобы не стыдно было'))
-bot.on('photo', (ctx) => ctx.reply('nice selfie, bro'))
-
-bot.launch()
-
-process.once('SIGINT', () => bot.stop('SIGINT'))
-process.once('SIGTERM', () => bot.stop('SIGTERM'))
+  bot.sendMessage(chatId, 'я все видел')
+})
