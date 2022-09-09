@@ -25,7 +25,12 @@ bot.onText(/\/motivation/, async (msg) => {
   getDocs(collection(db, "motivation"))
     .then(res => {
       res.forEach((doc) => {
+        try {
         bot.sendMessage(chatId, doc.data().firstPhrase)
+        } catch (err) {
+        bot.sendMessage(chatId, err.toString())
+       
+        }
       })
     })
 
