@@ -1,6 +1,6 @@
 const { initializeApp } = require("firebase/app")
 const { getFirestore, collection, getDocs } = require("firebase/firestore")
-const { getDatabase } = require('firebase/database')
+// const { getDatabase } = require('firebase/database')
 
 const firebaseConfig = {
     apiKey: "AIzaSyDL93kMJrzWo540eVYlqhosKVZU9Paod8w",
@@ -15,6 +15,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const db = getDatabase()
+const db = getFirestore(app)
 
 module.exports = { db }
