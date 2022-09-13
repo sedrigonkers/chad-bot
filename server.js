@@ -5,10 +5,7 @@ const { db } = require('./firebase')
 
 const token = '5646501975:AAFZ37NppJplu4Ckgsk8iBs22gNNP-jVNDY'
 const adminId = 444198069
-const userList = [
-  '444198069',
-  '675207271',
-]
+
 
 const bot = new TelegramBot(token, { polling: true });
 
@@ -36,17 +33,17 @@ bot.onText(/\/suggest/, (message) => { //suggest post
 
   bot.sendMessage(chatId, 'Если ты хочешь помочь другим ребятам, пришли свой текст в следующем сообщении')
 
+
   bot.on('message', (msg) => {
 
     const chatId = msg.chat.id
 
-    if (msg.message_id != message.message_id + 2) return
+    if (msg.text.startsWith('/')) return bot.removeListener('message')
 
     sendSuggestToAdmin(msg)
 
-    bot.sendMessage(chatId, 'Спасибо за твой вклад, дружище! 🫂 Я отправил твоё предложение администратору.')
   })
-  return
+
 }
 )
 
@@ -101,6 +98,7 @@ bot.on('my_chat_member', (ctx) => {
       setDoc(doc(db, "users", user_id.toString()), {
         user_id,
         first_name,
+        user_name: user_name ? user_name : 'undefined',
       });
       break
   }
@@ -219,22 +217,45 @@ function sendSuggestToAdmin(msg) { // Отправить пост предлож
   }
 
   const userName = msg.from.username ? '@' + msg.from.username : msg.from.first_name
+  const chatId = msg.chat.id
 
-  if (msg.photo) {
-    return bot.sendPhoto(msg.chat.id, msg.photo[0].file_id, options)
-  }
 
+  bot.sendMessage(adminId, `Новое предложение от *${userName}*:`, { parse_mode: 'Markdown' })
+    .then((res, rej) => {
+
+      if (msg.photo) {
+        return bot.sendPhoto(adminId, msg.photo[3].file_id, options)
+      }
+
+      if (msg.animation) {
+        return bot.sendAnimation(adminId, msg.animation.file_id, options)
+      }
+
+      if (msg.audio) {
+        return bot.sendAudio(adminId, msg.audio.file_id, options)
+      }
+
+      if (msg.video) {
+        return bot.sendVideo(adminId, msg.video.file_id, options)
+      }
+
+      if (msg.text) {
+        return bot.sendMessage(adminId, msg.text)
+      }
+
+      return rej()
+
+    })
+    .then(() => {
+
+      bot.sendMessage(chatId, 'Спасибо за твой вклад, дружище! 🫂 Я отправил твоё предложение администратору.')
+      bot.removeListener('message')
+
+    })
+    .catch(() => console.log('error'))
   // bot.sendMessage(adminId, `Новое предложение от <b>${userName}</b>:\n\n<i>${msg.text}</i>`, options)
 }
 
-
-
-// bot.on('photo', (msg) => {
-
-//   // bot.sendMessage(adminId, JSON.stringify(msg.photo[0].file_id), { parse_mode: 'Markdown' })
-
-//   console.log(msg.message_id)
-// })
 
 
 // какие то приколы
