@@ -52,11 +52,21 @@ function getUsers() {
 
   getDocs(collection(db, "users"))
     .then(res => {
+<<<<<<< HEAD
 
       res.forEach((user) => {
 
         users.push(user.data().user_id)
 
+=======
+      res.forEach((doc) => {
+        try {
+        bot.sendMessage(chatId, doc.data().firstPhrase)
+        } catch (err) {
+        bot.sendMessage(chatId, err.toString())
+       
+        }
+>>>>>>> cb6099c5fa664cb6ae6bee2a24d4f6bbeebb5c98
       })
 
 
@@ -68,6 +78,7 @@ console.log(getUsers())
 
 function sendSuggestToAdmin(msg) { // Отправить пост предложки админу
 
+<<<<<<< HEAD
   const userName = msg.from.username ? '@' + msg.from.username : msg.from.first_name
 
   bot.sendMessage(adminId, `Новое предложение от <b>${userName}</b>:\n\n<i>${msg.text}</i>`,
@@ -246,3 +257,7 @@ bot.on('sticker', (ctx) => {
 // }
 
 // getCollection()
+=======
+  bot.sendMessage(chatId, 'я все видел')
+})
+>>>>>>> cb6099c5fa664cb6ae6bee2a24d4f6bbeebb5c98
