@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api')
-const { collection, setDoc, deleteDoc, getDoc, deleteField, query, where, onSnapshot, updateDoc, getDocs, doc } = require("firebase/firestore")
+const { collection, setDoc, deleteDoc, deleteField, query, where, onSnapshot, updateDoc, getDocs, doc } = require("firebase/firestore")
 const { db } = require('./firebase')
 
 
@@ -24,7 +24,7 @@ const helpText = `
 
 Ты можешь предложить свой пост командой <b>/suggest</b>
 
-К публикации принимаются форматы: <b>GIF, видео, фото, музыка, голосовые, текст</b>
+К публикации принимаются форматы: <b>GIF, видео, фото, музыка, текст</b>
 
 <b>готово</b> 👍
 `
@@ -43,62 +43,66 @@ bot.onText(/\/suggest/, (message) => { //suggest post
 
   const chatId = message.chat.id
 
-  bot.sendMessage(chatId, '*Пришли свой пост в следующем сообщении ✏️*', { parse_mode: 'Markdown' })
+  bot.sendMessage(chatId, 'Если ты хочешь помочь другим ребятам, пришли свой текст в следующем сообщении')
 
 
   bot.on('message', (msg) => {
 
-    if (!filterPost(msg)) return
+    const chatId = msg.chat.id
 
-    sendSuggestToAdmin(msg)
+    postFilter(msg)
 
   })
 
 }
 )
 
-bot.onText(/\/random/, (msg) => {
+function postFilter(msg) {
+  if (msg.text && msg.text.startsWith('/')) return bot.removeListener('message')
 
-  const chatId = msg.chat.id
-  getRandomPost().then((randomPost) => {
+  if (msg.audio) return sendSuggestToAdmin(msg)
+  if (msg.video) return sendSuggestToAdmin(msg)
+  if (msg.photo) return sendSuggestToAdmin(msg)
+  if (msg.animation) return sendSuggestToAdmin(msg)
+  if (msg.text) return sendSuggestToAdmin(msg)
 
-    const { body, options, type } = randomPost
-
-    switch (type) {
-      case 'photo':
-        bot.sendPhoto(chatId, body, options)
-        break
-      case 'text':
-        bot.sendMessage(chatId, body, options)
-        break
-      case 'animation':
-        bot.sendAnimation(chatId, body, options)
-        break
-      case 'voice':
-        bot.sendVoice(chatId, body, options)
-        break
-      case 'audio':
-        bot.sendAudio(chatId, body, options)
-        break
-      case 'video':
-        bot.sendVideo(chatId, body, options)
-        break
-    }
-  })
-})
-
-function filterPost(msg) {
-
-  const chatId = msg.chat.id
-
-  const { text, video, photo, animation, audio, voice } = msg
-
-  if (msg.text && msg.text.startsWith('/suggest')) return bot.removeListener('message')
-
-  if (text || video || photo || animation || audio || voice) return true
-
-  bot.sendMessage(chatId, '*Неподдерживаемый формат поста 🤷‍♀️. Доступные форматы можно посмотреть в /help*', { parse_mode: 'Markdown' })
+  return bot.sendMessage(adminId, 'Что то не так. Я не смогу отправить такой пост, почитай правила отпраки в /help')
 }
+
+// bot.onText(/\/post/, (message) => { // new post
+
+//   const chatId = message.chat.id
+//   const options = {
+//     parse_mode: 'markdown',
+//     reply_markup: {
+//       inline_keyboard: [
+//         [
+//           {
+//             text: 'Опубликовать ✅',
+//             callback_data: 'public'
+//           }
+//         ],
+//         [
+//           {
+//             text: 'Отменить ❌',
+//             callback_data: 'decline'
+//           }
+//         ],
+//       ]
+//     }
+//   }
+
+//   if (chatId.toString() !== adminId.toString()) return bot.sendMessage(chatId, `Ты можешь предложить свою мысль. Для этого введи команду \n<b>\/suggest</b>`, { parse_mode: 'HTML' })
+
+//   bot.sendMessage(chatId, 'Отправь пост в следующем сообщении')
+
+//   bot.on('message', (msg) => {
+
+//     postFilter(msg)
+
+//   })
+
+// })
 
 
 bot.onText(/\/cancel/, (msg) => {
@@ -146,7 +150,8 @@ bot.on('callback_query', (callback) => {
   const firstName = callback.message.chat.first_name
   const messageCaption = callback.message.caption
 
-  const { photo, video, animation, audio, text, voice } = callback.message
+  const { photo, video, animation, audio, text } = callback.message
+  // const postText = messageText.substring(messageText.lastIndexOf('\n') + 2)
 
   const options = {
     message_id: messageId,
@@ -159,14 +164,13 @@ bot.on('callback_query', (callback) => {
 
 
   switch (callback.data) {
-
     case 'accept-suggestion':
 
       if (text) {
         return bot.editMessageText(`${text ? text : ''}\n\nПринято ✅`, options)
           .then(() => {
-            return publicPost((...p) => bot.sendMessage(...p), text, {}, 'text')
-              .then(() => bot.sendMessage(chatId, '*Пост успешно опубликован 📝*', { parse_mode: 'Markdown' })
+            return sendPostToAllUsers((...p) => bot.sendMessage(...p), text)
+              .then(() => bot.sendMessage(chatId, '<b>Пост успешно опубликован 📝</b>', options)
               )
               .catch(err => bot.sendMessage(chatId, 'Произошла какая-то ошибка:\n\n' + err))
           })
@@ -176,24 +180,20 @@ bot.on('callback_query', (callback) => {
         .then(() => {
 
           if (video) {
-            return publicPost((...p) => bot.sendVideo(...p), video.file_id, mediaOptions, 'video')
+            return sendPostToAllUsers((...p) => bot.sendVideo(...p), video.file_id, mediaOptions)
           }
 
           if (photo) {
             // return bot.sendPhoto(chatId, photo[photo.length - 1].file_id, mediaOptions)
-            return publicPost((...p) => bot.sendPhoto(...p), photo[photo.length - 1].file_id, mediaOptions, 'photo')
+            return sendPostToAllUsers((...p) => bot.sendPhoto(...p), photo[photo.length - 1].file_id, mediaOptions)
           }
 
           if (animation) {
-            return publicPost((...p) => bot.sendAnimation(...p), animation.file_id, mediaOptions, 'animation')
+            return sendPostToAllUsers((...p) => bot.sendAnimation(...p), animation.file_id, mediaOptions)
           }
 
           if (audio) {
-            return publicPost((...p) => bot.sendAudio(...p), audio.file_id, mediaOptions, 'audio')
-          }
-
-          if (voice) {
-            return publicPost((...p) => bot.sendVoice(...p), voice.file_id, mediaOptions, 'voice')
+            return sendPostToAllUsers((...p) => bot.sendAudio(...p), audio.file_id, mediaOptions)
           }
         })
 
@@ -221,29 +221,8 @@ async function addPostToDb(obj) {
   return await setDoc(doc(db, "posts", generateId()), obj);
 }
 
-function getRandomPost() {
-  return new Promise(async (res, rej) => {
-    const document = await getDoc(doc(db, 'posts', 'posts-id'))
+async function sendPostToAllUsers(callback, file, options) {
 
-    if (document.exists()) {
-
-      const postsArray = document.data().posts_id
-      const random = () => Math.round(Math.random() * (postsArray.length - 1))
-      const randomPostId = postsArray[random()]
-
-      // console.log(randomPostId)
-      const randomPost = await getDoc(doc(db, 'posts', randomPostId))
-      // res(randomPost.data())
-      res(randomPost.data())
-
-    }
-    else rej('no such document')
-  })
-}
-
-async function publicPost(callback, file, options, type) {
-
-  addPostToDb({ body: file, date: Date.now(), options: options && {}, type: type })
   const users = await getUsers()
   let i = 0
 
@@ -265,10 +244,6 @@ async function getUsers() {
   });
 
   return users
-
-}
-
-function switchSendMessage() {
 
 }
 
@@ -298,35 +273,29 @@ function sendSuggestToAdmin(msg) { // Отправить пост предлож
 
   const isAdmin = adminId.toString() === chatId.toString()
 
-  const suggestMsgText = `Новое предложение от *${userName}*:`
-
-  const { photo, video, text, audio, voice, animation } = msg
+  const suggestMsgText = isAdmin ? 'Пост будет выглядеть так:' : `Новое предложение от *${userName}*:`
 
   bot.sendMessage(adminId, suggestMsgText, { parse_mode: 'Markdown' })
     .then(() => {
 
-      if (photo) {
-        return bot.sendPhoto(adminId, photo[photo.length - 1].file_id, options)
+      if (msg.photo) {
+        return bot.sendPhoto(adminId, msg.photo[msg.photo.length - 1].file_id, options)
       }
 
-      if (animation) {
-        return bot.sendAnimation(adminId, animation.file_id, options)
+      if (msg.animation) {
+        return bot.sendAnimation(adminId, msg.animation.file_id, options)
       }
 
-      if (audio) {
-        return bot.sendAudio(adminId, audio.file_id, options)
+      if (msg.audio) {
+        return bot.sendAudio(adminId, msg.audio.file_id, options)
       }
 
-      if (video) {
-        return bot.sendVideo(adminId, video.file_id, options)
+      if (msg.video) {
+        return bot.sendVideo(adminId, msg.video.file_id, options)
       }
 
-      if (text) {
-        return bot.sendMessage(adminId, text, options)
-      }
-
-      if (voice) {
-        return bot.sendVoice(adminId, voice.file_id, options)
+      if (msg.text) {
+        return bot.sendMessage(adminId, msg.text, options)
       }
 
     })
