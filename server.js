@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api')
-const { collection, setDoc, deleteDoc, getDoc, deleteField, query, where, onSnapshot, updateDoc, getDocs, doc } = require("firebase/firestore")
+const { collection, setDoc, deleteDoc, getDoc, deleteField, arrayUnion, query, where, onSnapshot, updateDoc, getDocs, doc } = require("firebase/firestore")
 const { db } = require('./firebase')
 
 
@@ -218,7 +218,14 @@ function generateId() {
 }
 
 async function addPostToDb(obj) {
-  return await setDoc(doc(db, "posts", generateId()), obj);
+
+  const id = generateId()
+  const postsRef = await updateDoc(doc(db, 'posts', 'posts-id'), {
+    posts_id: arrayUnion(id)
+  })
+
+  return await setDoc(doc(db, "posts", id), obj);
+
 }
 
 function getRandomPost() {
@@ -231,9 +238,9 @@ function getRandomPost() {
       const random = () => Math.round(Math.random() * (postsArray.length - 1))
       const randomPostId = postsArray[random()]
 
-      // console.log(randomPostId)
+      console.log(randomPostId)
       const randomPost = await getDoc(doc(db, 'posts', randomPostId))
-      // res(randomPost.data())
+
       res(randomPost.data())
 
     }
@@ -244,6 +251,7 @@ function getRandomPost() {
 async function publicPost(callback, file, options, type) {
 
   addPostToDb({ body: file, date: Date.now(), options: options && {}, type: type })
+
   const users = await getUsers()
   let i = 0
 
