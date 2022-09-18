@@ -1,6 +1,6 @@
 {
-  "name": "telegram",
-  "version": "1.0.0",
+  "name": "telegram-chad-bot",
+  "version": "4.5.1",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -8,14 +8,10 @@
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "space lion",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.27.2",
-    "crypto": "^1.0.1",
     "firebase": "^9.9.4",
-    "node-fetch": "^2.6.7",
-    "node-telegram-bot-api": "^0.59.0",
-    "telegraf": "^4.9.1"
+    "node-telegram-bot-api": "^0.59.0"
   }
 }

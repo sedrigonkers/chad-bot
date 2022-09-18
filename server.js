@@ -7,37 +7,25 @@ const { collection,
   updateDoc,
   getDocs,
   doc } = require("firebase/firestore")
-const { getDatabase, ref, child, get } = require("firebase/database")
 const { db } = require('./firebase')
+const config = require('./config.json')
 
 
-const dbRef = ref(getDatabase())
-
-// const config = get(dbRef).then((snapshot) => {
-//   return new Promise((res) => {
-//     if (snapshot.exists()) {
-//       res(snapshot.val())
-//     } else {
-//       console.log("No data available");
-//     }
-//   }).catch((error) => {
-//     console.error(error);
-//   });
-// })
-
-const adminId = 444198069
-const token = '5646501975:AAFZ37NppJplu4Ckgsk8iBs22gNNP-jVNDY'
+const { adminId, token } = config
 
 const bot = new TelegramBot(token, { polling: true });
 
 const greetingText = `
-<b>Приветствую тебя, дружище! Добро пожаловать в клуб.</b>🤜🤛
+*Приветствую тебя, дружище! Добро пожаловать в клуб.*🤜🤛
 
-Здесь мы жестко гриндим, чтобы cтать лучшей версией себя. У всех нас свои причины для этого, и разные предыстории, но нас объеденяет одно - <i>желаение стать лучше</i> 🔥. <b>Ты - большой молодец</b>, если нашел этого бота. Мы будем помогать тебе не сбиться на этом длинном пути 💪
+Здесь жоские ребята собираются, и помогают друг другу cтать лучшей версией себя. У всех нас свои причины для этого, и разные предыстории, но нас объеденяет одно - _желаение стать лучше_ 🔥. Мы будем помогать тебе не сбиться на этом длинном пути 💪
 
-<i>   (смотри команды, если что-то непонятно)</i>
+🧷 Сюда ты можешь отправить *что угодно*, и это увидят все пользователи бота.
+
+   \`(смотри команды, если что-то непонятно)\`
 👇 
 `
+
 const helpText = `
 <b><i>Как делать посты?</i></b>
 
@@ -49,8 +37,10 @@ const helpText = `
 `
 const markdown = { parse_mode: 'markdown' }
 
+// Bot commands
+
 bot.onText(/\/start/, msg => { // start command
-  bot.sendMessage(msg.chat.id, greetingText, { parse_mode: 'html' })
+  bot.sendMessage(msg.chat.id, greetingText, { parse_mode: 'Markdown' })
 })
 
 bot.onText(/\/help/, (msg) => {
@@ -91,6 +81,8 @@ bot.onText(/\/cancel/, (msg) => {
   bot.removeListener('message')
   bot.sendMessage(msg.chat.id, '*Команда отменена 👍*', markdown)
 })
+
+// Handling bot events
 
 bot.on('my_chat_member', (ctx) => {
 
@@ -238,7 +230,6 @@ function getRandomPost() {
   })
 }
 
-
 async function getUsers() {
 
   const users = new Array()
@@ -276,7 +267,7 @@ function sendAnyMessage(chatId, body, options = {}) {
   }
 }
 
-function sendSuggestToAdmin(msg) { // Отправить пост предложки админу
+function sendSuggestToAdmin(msg) {
 
   const options = {
     'caption': msg.caption,
