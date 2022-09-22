@@ -104,10 +104,6 @@ bot.on('my_chat_member', (ctx) => {
   }
 })
 
-bot.on('polling_error', (err) => {
-  bot.sendMessage(adminId, '*Ошибка 🫤*\n', markdown)
-})
-
 bot.on('sticker', (ctx) => {
   bot.sendMessage(ctx.chat.id, 'Клевый стикер, бро')
 })
